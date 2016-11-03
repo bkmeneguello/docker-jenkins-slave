@@ -1,28 +1,26 @@
-FROM jpetazzo/dind
-MAINTAINER Yasser Nabi "yassersaleemi@gmail.com"
+FROM docker:dind
+MAINTAINER Bruno Meneguello "bruno@meneguello.com"
 ENV JENKINS_HOME /jenkins
-ENV JENKINS_SWARM_CLIENT_VER 1.15
+ENV JENKINS_SWARM_CLIENT_VER 2.2
 ENV JENKINS_JAVA_ARGS '-Djava.awt.headless=true'
-ENV TZ Europe/London
+ENV TZ GMT
 ENV DEBIAN_FRONTEND noninteractive
 EXPOSE 2812 22
 
-RUN sed 's/main$/main universe/' -i /etc/apt/sources.list && \
-        apt-get update && \
-        apt-get -y install \
-            openssh-server \
-            monit \
+RUN apk add --no-cache \
+            bash \
+            openssh \
             curl \
-            openjdk-7-jre-headless \
+            openjdk7-jre-base \
             git \
             subversion
 
-ADD ./monit.d/ /etc/monit/conf.d/
 ADD ./jenkins.sudoers /etc/sudoers.d/jenkins
 ADD ./jenkins_init_wrapper.sh /jenkins_init_wrapper.sh
 ADD ./start.sh /start.sh
 
-RUN mkdir -p ${JENKINS_HOME} && curl -s -L -o $JENKINS_HOME/swarm-client.jar \
-      http://maven.jenkins-ci.org/content/repositories/releases/org/jenkins-ci/plugins/swarm-client/${JENKINS_SWARM_CLIENT_VER}/swarm-client-${JENKINS_SWARM_CLIENT_VER}-jar-with-dependencies.jar
+RUN ln -s /usr/local/bin/docker /usr/bin/docker && \
+      mkdir -p ${JENKINS_HOME} && curl -s -L -o $JENKINS_HOME/swarm-client.jar \
+      https://repo.jenkins-ci.org/releases/org/jenkins-ci/plugins/swarm-client/${JENKINS_SWARM_CLIENT_VER}/swarm-client-${JENKINS_SWARM_CLIENT_VER}-jar-with-dependencies.jar
 
 ENTRYPOINT ["/bin/bash", "/start.sh"]
